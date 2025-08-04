@@ -58,6 +58,8 @@ def initialize_game(game_map, fog, player):
     player['turns'] = TURNS_PER_DAY
     player['bag_size']= 10 
     player['Name'] = ''
+    player['Pickaxe Level'] = 1
+    player['Pickaxe material'] = ['copper', 'silver', 'gold']
 
     clear_fog(fog, player)
     
@@ -110,7 +112,7 @@ def show_town_menu():
 
 def show_shop_menu():
     print('----------------------- Shop Menu -------------------------')
-    print('(P)ickaxe upgrade to Level 2 to mine silver ore for 50 GP')
+    print(f'(P)ickaxe upgrade to Level {player['Pickaxe Level']+1} to mine silver ore for 50 GP')
     print (f'(B)ackpack upgrade to carry {player['bag_size']+2} items for {player['bag_size']*2} GP')
     print('(L)eave shop')
     print('-----------------------------------------------------------')
@@ -120,13 +122,13 @@ def show_shop_menu():
 def player_info():
     print('----- Player Information -----')
     print(f'Name: {player['Name']}')
-    print('Portal position: (7, 1)')
-    print('Pickaxe level: 2 (silver)')
+    print(F'Portal position: ({player['x']}, {player['y']})')
+    print(f'Pickaxe level: {player['Pickaxe Level']} ({player['Pickaxe material'][player['Pickaxe Level']]})')
     print('------------------------------')
-    print('Load: 0 / 12')
+    print(f'Load: 0 / {player['bag_size']}')
     print('------------------------------')
     print(f'GP: {player['GP']}')
-    Steps taken: 16
+    print('Steps taken: 16')
     print('------------------------------')
             
 
@@ -190,6 +192,6 @@ while main_menu_running:
         pass
     elif choice == 'i':
         
-    elif choice == "q":
+    #elif choice == "q":
         print('Hope you had fun. Goodbye!')
         break
