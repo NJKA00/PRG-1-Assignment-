@@ -1,0 +1,16 @@
+x:0
+y:0
+copper:10
+silver:0
+gold:0
+GP:1030
+day:1
+steps:6
+turns:20
+bag_size:10
+name:e
+Pickaxe Level:1
+Pickaxe material:['copper', 'silver', 'gold']
+torch:False
+load:0
+bagpack load:{'c': 0, 's': 0, 'g': 0}
