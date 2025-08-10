@@ -155,7 +155,7 @@ def draw_view(game_map, player):
     
 
 # This function saves the game
-def save_game(game_map, fog, player):
+# def save_game(game_map, fog, player):
     # save map
     # save fog
     # save player
@@ -315,6 +315,87 @@ def sell_mat():
         print(f"Total sale: {total_sale} GP\n")
     else:
         print("You had no ore to sell.\n")
+def save_game():
+    with open('Saved game.txt', "w") as file:
+        player_prog = ''
+        for stat, value in player.items():
+            player_prog += f'{stat}:{value}\n'
+        file.write(player_prog)
+    with open ('fog_folder', 'w') as file:
+        fog_content = ''
+        for column in fog:
+            for tile in column:
+                fog_content += f'{tile}'
+            fog_content+=f"\n"
+        file.write(fog_content)
+    with open('map_folder','w') as file:
+        map_content =''
+        for column in game_map:
+            for tile in column:
+                map_content += f"{tile}"
+            map_content += f'\n'
+        file.write(map_content)
+
+# def valid_movement(next_y,next_x):
+
+#     next_tile = game_map[next_y][next_x]
+#     next_tile = next_tile.lower()
+#     if next_tile in ['c','s','g'] and sum(player['current_load'].values()) >= player['load']:
+#         print(f"cannot mine")
+#         return False
+#     elif movement == "d" and not player["x"]==MAP_WIDTH-1:
+#         next_x = player["x"] + 1 
+#         if valid_movement(player['y'],next_x):
+#             player["x"]+=1
+#     elif movement == "a" and not player["x"]==MAP_WIDTH-1:
+#         next_x = player["x"] - 1 
+#         if valid_movement(player['y'],next_x):
+#             player["x"]-=1
+#     elif movement == "w" and not player["y"]==MAP_HEIGHT-1:
+#         next_y = player["y"] + 1 
+#         if valid_movement(next_y,player['x']):
+#             player["y"]+=1
+#     elif movement == "s" and not player["y"]==MAP_HEIGHT-1:
+#         next_y = player["y"] -1
+#         if valid_movement(next_y,player['x']):
+#             player["y"]-=1
+#     else:
+#         return True
+
+def valid_movement(direction):
+    dx, dy = 0, 0
+    if direction == 'w':
+        dy = -1
+    elif direction == 's':
+        dy = 1
+    elif direction == 'a':
+        dx = -1
+    elif direction == 'd':
+        dx = 1
+    else:
+        return False  # invalid direction
+
+    new_x = player['x'] + dx
+    new_y = player['y'] + dy
+
+    # Check map boundaries
+    if new_x < 0 or new_x >= MAP_WIDTH or new_y < 0 or new_y >= MAP_HEIGHT:
+        return False
+
+    # Optionally prevent movement onto certain tiles (like walls or full bag mining)
+    tile = game_map[new_y][new_x].lower()
+
+    # Prevent mining if bag is full
+    if tile in ['c', 's', 'g'] and player['load'] >= player['bag_size']:
+        print("You can't mine here — your bag is full!")
+        return False
+
+    return True
+
+
+
+
+
 
 
 
@@ -330,7 +411,6 @@ print("How quickly can you get the 500 GP you need to retire")
 print("  and live happily ever after?")
 print("-----------------------------------------------------------")
 
-# TODO: The game!
 town_menu_running = True  
 main_menu_running = True    
 shop_menu_running = True
@@ -338,16 +418,50 @@ while main_menu_running:
     show_main_menu()
     choice = input("Your choice? ")
     choice = choice.lower()
-    if choice == "n":
-        name = input('Greetings, miner! What is your name? ')
-        player['name']= name
-       
+
+    if choice == "n" or choice =='l':
+
+        if choice == "n":
+            initialize_game(game_map, fog, player)
+            name = input('Greetings, miner! What is your name? ')
+            player['name']= name
+
+            game_map = load_map("level1.txt", game_map)
+            create_fog(fog)
+        elif choice == 'l':
+            #initialize_game(game_map, fog, player)
+            with open('Saved game.txt', 'r') as file:
+                player.clear()  # remove old data
+                for line in file:
+                    stat, value = line.strip().split(':', 1)
+                    if value.isdigit():
+                        value = int(value)
+                    if value == "True":
+                        value = True
+                    elif value == "False":
+                        value=False
+                    elif stat == "bagpack load":
+                        value = value[1:-1]  # remove the braces "{}"
+                        value = value.replace("'", "")  # remove single quotes
+                        mineral_list = value.split(",")
+                        player['bagpack load'] = {}
+                        for item in mineral_list:
+                            mineral, amount = item.split(":")
+                            player['bagpack load'][mineral.strip()] = int(amount.strip())
+                        
+                            print(game_map)
+                    else:
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            pass
+                    player[stat] = value
+                
+            game_map = load_map('map_folder',game_map)
+            fog = load_map('fog_folder',fog)
+            player['pickaxe material'] = ['copper','silver','gold']
+
         print(f'Pleased to meet you, {name}. Welcome to Sundrop Town!')
-
-        initialize_game(game_map, fog, player)
-        game_map = load_map("level1.txt", game_map)
-        create_fog(fog)
-
         while town_menu_running:
             in_town = True 
             show_town_menu()
@@ -412,11 +526,15 @@ while main_menu_running:
                     print('(M)ap, (I)nformation, (P)ortal, (Q)uit to main menu')
                     movement = input("Action?")
                     movement = movement.lower()
-                    
+                    print(movement)
+                
                     if movement in ['w','a','s','d']:
+                        valid_movement(player_movement(movement))
+
                         player_movement(movement)
                         clear_fog(fog, player)
                         TURNS_PER_DAY-=1
+                        
                     elif movement == 'm':
                         draw_map(game_map, fog, player)
                     elif movement == 'i':
@@ -428,6 +546,9 @@ while main_menu_running:
                         player['day']+= 1
                         TURNS_PER_DAY = 20
                         break
+                    
+                    else:
+                        print("Invalid option. Please try again.")
                     if player['x'] == 0 and player['y']==0:
                         sell_mat()
                         break
@@ -439,8 +560,7 @@ while main_menu_running:
                         player['day']+= 1
                         TURNS_PER_DAY=20
                         break
-                    else:
-                        print("Invalid option. Please try again.")
+                    
 
 
                         
@@ -448,18 +568,19 @@ while main_menu_running:
 
 
             elif town_choice == ('v'):
-                pass
+                save_game()
+                print("Game Saved!")
             elif town_choice == "njka":
                 clear_fog(fog,player)
                 draw_map(game_map,fog,player)
+            elif town_choice == ('l'):
+                pass
             else: 
                 print("Invalid option, please try again.")
                 continue
 
 
-    elif choice == 'l':
-        # do layter
-        pass
+    
         
     elif choice == "q":
         print('Hope you had fun. Goodbye!')
